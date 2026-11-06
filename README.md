@@ -1,104 +1,63 @@
-# MandáTodo Logística · PPP1 Grupo 9
+# MandáTodo Logística
 
-Caso 7: normalización y geolocalización de direcciones de envío. La IA implementa y el equipo define, comprende y valida.
+Sistema web para una empresa de logística de última milla que recibe pedidos por WhatsApp, Instagram, correo y otros canales. Su objetivo principal es **normalizar y geolocalizar las direcciones de envío** para evitar viajes fallidos, y acompañar el pedido desde la carga hasta la entrega y el cobro.
 
-**Estado:** frontend de demostración, backend con respuesta HTTP básica y conexión MySQL, SQL inicial sin migraciones. Todavía no hay flujo de pedidos persistido ni autenticación real. Ver [arquitectura](docs/arquitectura.md).
+Proyecto académico PPP1 · Grupo 9 · Caso 7.
 
-## Copia local aislada MVP-1 · 31/10/2026
+## Qué hace
 
-Esta configuración reemplaza los puertos de los ejemplos históricos de abajo.
-Proyecto Compose: `mandatodo-mvp1-aislado`; volumen MySQL:
-`mandatodo-mvp1-aislado_mysql_data`; base: `mandatodo_mvp1_aislado`.
-Contenedores y red pertenecen a este proyecto; no se comparten datos con otras copias.
+### Usuarios y acceso
+- Inicio de sesión con cuentas individuales y token JWT.
+- Tres roles con permisos diferenciados: **Administrador**, **Operador** y **Chofer**. Los permisos se validan en el servidor.
+- ABM de usuarios (solo administrador).
 
-- Web: http://localhost:5174
-- API y estado de MySQL: http://localhost:3001/api/health
-- MySQL desde el host: 127.0.0.1:3308
+### Clientes
+- ABM de clientes con búsqueda por nombre, DNI, teléfono o email.
+- Normalización del DNI y rechazo de DNI duplicados; aviso (sin fusión automática) ante teléfono o email repetidos.
+- Libreta de direcciones por cliente para reutilizar direcciones de envíos anteriores.
 
-Desde esta carpeta: `docker compose up -d` para iniciar y
-`docker compose stop` para detener conservando datos. No usar `down -v`.
-Las cuatro migraciones y las cuentas de prueba ya están creadas en la base nueva.
-Las credenciales de seed están en el archivo local `.env` (SEED_*_PASSWORD);
-las cuentas son admin@mandatodo.com, operador@mandatodo.com y chofer@mandatodo.com.
-Los secretos de MySQL y JWT se generaron para esta copia y no se versionan.
+### Pedidos y direcciones
+- Carga manual de pedidos con dirección estructurada (calle, altura, piso/depto, entre calles, localidad, provincia, código postal) y canal de origen.
+- Normalización de provincias y localidades argentinas (24 jurisdicciones, catálogo de localidades).
+- Geocodificación de la dirección y previsualización de la ubicación en un mapa durante la carga.
+- **Confirmación humana obligatoria** de la ubicación: un empleado revisa el punto en el mapa y la confirma o la rechaza. Si la dirección cambia, la confirmación se invalida.
+- Bandeja de revisión de direcciones pendientes.
+- Alerta de pedidos potencialmente duplicados (mismo cliente y misma dirección en una ventana de tiempo).
+- Listado general de pedidos con filtros por estado, estado de validación, cliente y fechas.
 
-También quedaron dependencias instaladas y archivos locales ignorados
-`backend/.env` y `frontend/.env` para ejecución nativa.
-Primero detener los servicios backend/frontend de Docker para liberar los puertos:
-`docker compose stop backend frontend`. Luego, en terminales separadas:
-`npm --prefix backend run dev` y `npm --prefix frontend run dev`.
-MySQL sigue en Docker; Vite carga su proxy y puerto desde `frontend/.env`.
+### Tarifas e importes
+- Configuración del precio por kilómetro y de la sucursal de origen (administrador).
+- Importe sugerido según la distancia entre la sucursal y el punto de entrega, también durante la carga.
 
-## Empezar con IA
+### Asignación y entrega
+- Asignación manual de pedidos a choferes (solo con dirección confirmada y chofer activo).
+- Cambios de estado de preparación y despacho con historial de estados.
+- Vista del chofer con sus pedidos asignados, registro de entrega y de pago.
+- Carga de comprobantes de pago por parte del chofer y acreditación del pago por el administrador.
 
-Abrir **esta carpeta** como proyecto. Leer [AGENTS.md](AGENTS.md) y [guía de desarrollo](docs/desarrollo-ia.md). Las reglas de trabajo están en `AGENTS.md` de la raíz y se complementan con [frontend/AGENTS.md](frontend/AGENTS.md) y [backend/AGENTS.md](backend/AGENTS.md) según la carpeta que toques. Configuración por herramienta y comprobación de contexto: [docs/agentes.md](docs/agentes.md). Primera tarea propuesta: T01 en [tareas](docs/tareas.md).
+### Exportación e importación
+- Exportación de la información de un pedido y de su mapa a PDF.
+- Importación del histórico de pedidos desde Excel, con saneamiento de datos.
 
-## Preparación local (PowerShell)
+## Tecnologías
 
-Requisitos: Node 24/npm y, para MySQL, Docker Desktop con motor Linux activo. Las dependencias están fijadas por los lockfiles de cada paquete. La raíz solo coordina scripts; no requiere npm install.
+| Capa | Tecnologías |
+| --- | --- |
+| Frontend | React 19, Vite 8, React Router 7, Axios, Leaflet + React Leaflet (mapas), jsPDF y pdf.js (PDF), ESLint, Vitest |
+| Backend | Node.js 24, Express 5 (CommonJS), JSON Web Token, bcryptjs (hash de contraseñas), Zod (validación), mysql2, xlsx (importación de Excel), dotenv |
+| Base de datos | MySQL 8.4 con migraciones versionadas |
+| Geolocalización | API Georef (datos geográficos oficiales de Argentina) y mapas Leaflet; adaptadores alternativos preparados para Nominatim y Google |
+| Infraestructura | Docker y Docker Compose (servicios MySQL, backend y frontend) |
 
-```powershell
-npm ci --prefix backend
-npm ci --prefix frontend
-npm run check
-```
+## Estructura
 
-Para Claude Code: `npm run skills:sync`. Después de editar una skill, volver a sincronizar; `npm run check` detecta copias locales desactualizadas.
+| Carpeta | Contenido |
+| --- | --- |
+| `frontend/` | Aplicación web React (páginas, componentes, cliente de API, sesión y guardas por rol) |
+| `backend/` | API REST Express organizada en rutas, controladores, servicios y repositorios |
+| `database/` | Esquema y migraciones SQL |
+| `docs/` | Documentación del proyecto: contexto, arquitectura, decisiones y tareas |
 
-## Arranque Docker
+## Arranque
 
-### Base compatible con MVP-1 (22/10/2026)
-
-Esta rama requiere el esquema de `database/migrations/001_esquema_inicial.sql`.
-Cambiar de rama no modifica las tablas del volumen MySQL. No reutilizar una base
-con otro esquema ni reaplicar `init.sql`: conservarla y preparar una base separada.
-En el entorno local reparado se usa `mandatodo_mvp1`; las cuentas se conservaron,
-pero los clientes y pedidos anteriores permanecen en la base anterior.
-
-Compose monta las migraciones en solo lectura. Sobre una base nueva configurada
-y accesible al usuario de aplicación, ejecutar:
-
-```powershell
-docker compose exec -T backend npm run migrate
-docker compose exec -T backend npm run seed
-```
-
-El runner rechaza bases heredadas sin historial. No borrar volúmenes para resolverlo.
-Detalle de reparación, verificación y recuperación en `docs/tareas.md` (22/10/2026).
-
-Crear .env desde .env.example **solo si no existe**, completar credenciales locales sin subirlas. No sobrescribir un .env existente.
-
-```powershell
-if (!(Test-Path .env)) { Copy-Item .env.example .env }
-docker compose config --quiet
-docker compose up -d --build
-docker compose ps
-docker compose logs --tail 100 backend
-```
-
-Frontend: http://localhost:5173 · backend: http://localhost:3000 · MySQL: localhost:3307 (configurable con MYSQL_HOST_PORT en .env). Para detener sin eliminar datos: `docker compose stop`. No borrar volúmenes.
-
-**Importante:** Compose no monta database/init.sql; iniciar MySQL no crea esas tablas. El script inicial no es una migración y no debe reaplicarse sobre datos existentes. Resolver T02 antes de habilitar persistencia.
-
-## Ejecución nativa opcional
-
-MySQL debe estar disponible. Copiar backend/.env.example a backend/.env solo si falta; completar con los valores de la misma base. Para Node en host contra MySQL de Docker: DB_HOST=127.0.0.1 y DB_PORT=3307 (o el MYSQL_HOST_PORT elegido); Compose usa mysql:3306 internamente.
-
-En terminales separadas:
-```powershell
-npm --prefix backend run dev
-npm --prefix frontend run dev
-```
-
-El backend actual puede responder / aunque MySQL falle. El frontend todavía no llama al backend, y no hay proxy Vite ni configuración CORS de aplicación.
-
-## Documentación
-
-- [Contexto](docs/contexto.md): fuentes, requisitos, propuestas y Clientes.
-- [Arquitectura](docs/arquitectura.md): implementación verificada y brechas.
-- [Pantallas](docs/pantallas.md): demo, maqueta local y flujos no observados.
-- [Decisiones](docs/decisiones.md) y [tareas](docs/tareas.md): continuidad del equipo.
-- [Verificación](docs/verificacion.md): comandos, alcance y resultados.
-- [Desarrollo con IA](docs/desarrollo-ia.md): skills, revisión humana y colaboración.
-
-Todo el contexto del proyecto vive en este repositorio. `temp/` recibe el material temporal (enunciados, Excel, capturas, ZIP) y está ignorada, salvo el `.gitkeep` que la conserva. Inventario de fuentes y sus límites en [fuentes](docs/fuentes.md). No se agregaron dependencias nuevas ni se ejecutaron commits, push o despliegues.
+Instalación, Docker, migraciones y ejecución local en [docs/arranque.md](docs/arranque.md).

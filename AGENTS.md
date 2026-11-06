@@ -68,7 +68,7 @@ Si ninguna skill encaja (tarea solo documental, corrección de estilo, duda conc
 ## Verificación
 - Desde la raíz: npm run check (integridad de contexto/skills, sintaxis backend, smoke HTTP, lint/build frontend). Requiere dependencias instaladas en ambos paquetes.
 - Para negocio nuevo agregar pruebas significativas de permisos, validaciones e integridad; la base HTTP no acredita esas reglas. Ver docs/verificacion.md.
-- Arranque en README.md. Respuesta de / no prueba disponibilidad de MySQL; una maqueta no prueba persistencia ni seguridad.
+- Arranque en [docs/arranque.md](docs/arranque.md). Respuesta de / no prueba disponibilidad de MySQL; una maqueta no prueba persistencia ni seguridad.
 - Cubrir casos de éxito, rechazo y fallo: rol/recurso, dirección incompleta o modificada, confirmación manual, duplicados potenciales, proveedor no disponible e integridad relacional. Informar qué no pudo probarse por entorno o acceso. Criterios y evidencia en [verificación](docs/verificacion.md).
 - Si un comando falla, decir que "todo lo demás pasó" no lo arregla: corregí la causa mínima o registrala como pendiente con su motivo. Nunca presentes un resultado que no ejecutaste.
 
