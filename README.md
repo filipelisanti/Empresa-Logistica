@@ -1,5 +1,7 @@
 # MandáTodo Logística
 
+**Español** · [English](README.en.md)
+
 Sistema web para una empresa de logística de última milla que recibe pedidos por WhatsApp, Instagram, correo y otros canales. Su objetivo principal es **normalizar y geolocalizar las direcciones de envío** para evitar viajes fallidos, y acompañar el pedido desde la carga hasta la entrega y el cobro.
 
 Proyecto académico PPP1 · Grupo 9 · Caso 7.
